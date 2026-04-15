@@ -1,36 +1,64 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import type { ReactNode } from 'react';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
+import { Layout } from './components/layout/Layout';
+import { useAuthStore } from './store/authStore';
+import { Cart } from './pages/Cart';
+import { Checkout } from './pages/Checkout';
+import { Dashboard } from './pages/Dashboard';
+import { Home } from './pages/Home';
+import { Login } from './pages/Login';
+import { ProductDetail } from './pages/ProductDetail';
+import { Register } from './pages/Register';
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+interface ProtectedRouteProps {
+  children: ReactNode;
 }
 
-export default App
+const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
+  const location = useLocation();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
+
+  return <>{children}</>;
+};
+
+const withBoundary = (element: ReactNode) => {
+  return <RouteErrorBoundary>{element}</RouteErrorBoundary>;
+};
+
+export const App = () => {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route element={withBoundary(<Layout />)}>
+          <Route path="/" element={withBoundary(<Home />)} />
+          <Route path="/product/:id" element={withBoundary(<ProductDetail />)} />
+          <Route path="/cart" element={withBoundary(<Cart />)} />
+          <Route
+            path="/checkout"
+            element={withBoundary(
+              <ProtectedRoute>
+                <Checkout />
+              </ProtectedRoute>
+            )}
+          />
+          <Route path="/login" element={withBoundary(<Login />)} />
+          <Route path="/register" element={withBoundary(<Register />)} />
+          <Route
+            path="/dashboard"
+            element={withBoundary(
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            )}
+          />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
+};
 
