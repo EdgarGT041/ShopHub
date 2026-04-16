@@ -1,91 +1,124 @@
-export interface ProductFilterValues {
-  search: string;
-  category: string;
-  minPrice: string;
-  maxPrice: string;
-}
+import { Search, SlidersHorizontal } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useDebounce } from '../../hooks/useDebounce';
+import type { FilterState } from '../../types';
 
 interface FiltersProps {
-  values: ProductFilterValues;
-  onChange: (field: keyof ProductFilterValues, value: string) => void;
-  onClear: () => void;
+  onFilterChange: (filters: FilterState) => void;
 }
 
-const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports'];
+const categories = ['Electronics', 'Clothing', 'Books', 'Home', 'Sports'] as const;
 
-export const Filters = ({ values, onChange, onClear }: FiltersProps) => {
+export const Filters = ({ onFilterChange }: FiltersProps) => {
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [searchValue, setSearchValue] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
+  const [minPriceInput, setMinPriceInput] = useState('');
+  const [maxPriceInput, setMaxPriceInput] = useState('');
+  const [appliedMinPrice, setAppliedMinPrice] = useState<string | undefined>(undefined);
+  const [appliedMaxPrice, setAppliedMaxPrice] = useState<string | undefined>(undefined);
+
+  const debouncedSearch = useDebounce(searchValue, 500);
+
+  useEffect(() => {
+    onFilterChange({
+      search: debouncedSearch || undefined,
+      category: selectedCategory,
+      minPrice: appliedMinPrice,
+      maxPrice: appliedMaxPrice,
+    });
+  }, [debouncedSearch, selectedCategory, appliedMinPrice, appliedMaxPrice, onFilterChange]);
+
+  const handleCategoryToggle = (category: string) => {
+    setSelectedCategory((prev) => (prev === category ? undefined : category));
+  };
+
+  const handleApplyPrice = () => {
+    setAppliedMinPrice(minPriceInput || undefined);
+    setAppliedMaxPrice(maxPriceInput || undefined);
+  };
+
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <div>
-          <label htmlFor="search" className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
-            Search
-          </label>
-          <input
-            id="search"
-            type="text"
-            value={values.search}
-            onChange={(event) => onChange('search', event.target.value)}
-            placeholder="Search by name or description"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="category" className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
-            Category
-          </label>
-          <select
-            id="category"
-            value={values.category}
-            onChange={(event) => onChange('category', event.target.value)}
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
-          >
-            <option value="">All categories</option>
-            {categories.map((category) => (
-              <option key={category} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label htmlFor="minPrice" className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
-            Min price
-          </label>
-          <input
-            id="minPrice"
-            type="number"
-            min="0"
-            value={values.minPrice}
-            onChange={(event) => onChange('minPrice', event.target.value)}
-            placeholder="0"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
-          />
-        </div>
-        <div>
-          <label htmlFor="maxPrice" className="mb-1 block text-xs font-medium uppercase tracking-wide text-slate-500">
-            Max price
-          </label>
-          <input
-            id="maxPrice"
-            type="number"
-            min="0"
-            value={values.maxPrice}
-            onChange={(event) => onChange('maxPrice', event.target.value)}
-            placeholder="999"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
-          />
-        </div>
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+        <input
+          type="text"
+          value={searchValue}
+          onChange={(event) => setSearchValue(event.target.value)}
+          placeholder="Search products"
+          aria-label="Search products"
+          className="w-full rounded-md border border-slate-300 py-2 pl-10 pr-3 text-sm outline-none ring-blue-500 transition focus:ring-2"
+        />
       </div>
-      <div className="mt-3 flex justify-end">
-        <button
-          type="button"
-          onClick={onClear}
-          className="rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
-        >
-          Clear filters
-        </button>
-      </div>
+
+      <button
+        type="button"
+        onClick={() => setShowAdvancedFilters((prev) => !prev)}
+        className="mt-3 inline-flex items-center gap-2 rounded-md border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+      >
+        <SlidersHorizontal className="h-4 w-4" />
+        {showAdvancedFilters ? 'Hide Filters' : 'Show Filters'}
+      </button>
+
+      {showAdvancedFilters ? (
+        <div className="mt-4 space-y-4">
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Categories</p>
+            <div className="flex flex-wrap gap-2">
+              {categories.map((category) => {
+                const isActive = selectedCategory === category;
+
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => handleCategoryToggle(category)}
+                    className={`rounded-full border px-3 py-1.5 text-sm font-medium transition ${
+                      isActive
+                        ? 'border-blue-600 bg-blue-600 text-white'
+                        : 'border-gray-300 bg-white text-slate-700 hover:border-blue-300'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Price Range</p>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_auto]">
+              <input
+                type="number"
+                min="0"
+                value={minPriceInput}
+                onChange={(event) => setMinPriceInput(event.target.value)}
+                placeholder="Min"
+                aria-label="Minimum price"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
+              />
+              <input
+                type="number"
+                min="0"
+                value={maxPriceInput}
+                onChange={(event) => setMaxPriceInput(event.target.value)}
+                placeholder="Max"
+                aria-label="Maximum price"
+                className="rounded-md border border-slate-300 px-3 py-2 text-sm outline-none ring-blue-500 transition focus:ring-2"
+              />
+              <button
+                type="button"
+                onClick={handleApplyPrice}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700"
+              >
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };
