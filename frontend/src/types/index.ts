@@ -30,10 +30,10 @@ export interface AuthResponse {
   user: User;
 }
 
-export interface ProductQueryParams {
+export interface FilterState {
   category?: string;
-  minPrice?: number;
-  maxPrice?: number;
+  minPrice?: string;
+  maxPrice?: string;
   search?: string;
   page?: number;
   limit?: number;
