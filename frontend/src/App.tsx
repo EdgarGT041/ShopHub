@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { RouteErrorBoundary } from './components/common/RouteErrorBoundary';
 import { Layout } from './components/layout/Layout';
@@ -33,6 +34,7 @@ const withBoundary = (element: ReactNode) => {
 export const App = () => {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" />
       <Routes>
         <Route element={withBoundary(<Layout />)}>
           <Route path="/" element={withBoundary(<Home />)} />
