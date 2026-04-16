@@ -3,11 +3,11 @@ import { useAuthStore } from '../store/authStore';
 import type {
   AuthResponse,
   CreateOrderPayload,
+  FilterState,
   LoginPayload,
   OrderResponse,
   Product,
   ProductListResponse,
-  ProductQueryParams,
   RegisterPayload,
 } from '../types';
 
@@ -61,10 +61,36 @@ apiClient.interceptors.response.use(
   }
 );
 
-export const getProducts = async (
-  params: ProductQueryParams = {}
-): Promise<ProductListResponse> => {
-  const response = await apiClient.get<ProductListResponse>('/products', { params });
+export const getProducts = async (filters: FilterState = {}): Promise<ProductListResponse> => {
+  const searchParams = new URLSearchParams();
+
+  if (filters.search?.trim()) {
+    searchParams.set('search', filters.search.trim());
+  }
+
+  if (filters.category?.trim()) {
+    searchParams.set('category', filters.category.trim());
+  }
+
+  if (filters.minPrice?.trim()) {
+    searchParams.set('minPrice', filters.minPrice.trim());
+  }
+
+  if (filters.maxPrice?.trim()) {
+    searchParams.set('maxPrice', filters.maxPrice.trim());
+  }
+
+  if (filters.page !== undefined) {
+    searchParams.set('page', String(filters.page));
+  }
+
+  if (filters.limit !== undefined) {
+    searchParams.set('limit', String(filters.limit));
+  }
+
+  const queryString = searchParams.toString();
+  const endpoint = queryString ? `/products?${queryString}` : '/products';
+  const response = await apiClient.get<ProductListResponse>(endpoint);
   return response.data;
 };
 
@@ -86,4 +112,12 @@ export const register = async (payload: RegisterPayload): Promise<AuthResponse> 
 export const createOrder = async (payload: CreateOrderPayload): Promise<OrderResponse> => {
   const response = await apiClient.post<OrderResponse>('/orders', payload);
   return response.data;
+};
+
+export const api = {
+  getProducts,
+  getProduct,
+  login,
+  register,
+  createOrder,
 };
